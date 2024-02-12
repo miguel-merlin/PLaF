@@ -28,6 +28,10 @@ let rec eval_expr : expr -> int result =
   | Abs(e) ->
     eval_expr e >>= fun n ->
     return (abs n)
+  | Min(e1,e2) ->
+    eval_expr e1 >>= fun n ->
+    eval_expr e2 >>= fun m ->
+    return (min n m)
   | _ -> failwith "Not implemented yet!"
 
 (** [eval_prog e] evaluates program [e] *)
