@@ -8,6 +8,7 @@ type exp_val =
   | BoolVal of bool
   | PairVal of exp_val*exp_val
   | TupleVal of exp_val list
+  | UntupleVal of string list * exp_val*exp_val
   | ListVal of exp_val list
 type env =
   | EmptyEnv
@@ -118,6 +119,7 @@ let rec string_of_expval = function
   | PairVal (ev1,ev2) -> "PairVal("^string_of_expval ev1
                          ^","^ string_of_expval ev2^")"
   | TupleVal evs -> "TupleVal("^String.concat "," (List.map string_of_expval evs)^")"
+  | UntupleVal (ids,ev1,ev2) -> "UntupleVal("^String.concat "," ids^","^string_of_expval ev1^","^string_of_expval ev2^")"
   | ListVal evs -> "ListVal("^String.concat "," (List.map string_of_expval evs)^")"
 
 let rec string_of_env' ac = function
