@@ -62,6 +62,26 @@ let rec eval_expr : expr -> exp_val ea_result =
     eval_expr e >>=
     pair_of_pairVal >>= fun (_,r) ->
     return r
+  | Cons(e1, e2) -> 
+    eval_expr e1 >>=
+    fun ev1 ->
+    eval_expr e2 >>=
+    list_of_listVal >>= fun ev2 ->
+    return (ListVal (ev1::ev2))
+  | Hd(e) -> eval_expr e >>=
+    list_of_listVal >>= fun l ->
+      if List.length l = 0
+        then error "hd: List is empty"
+      else return (List.hd l)
+  | Tl(e) -> eval_expr e >>=
+    list_of_listVal >>= fun l ->
+      if List.length l = 0
+        then error "tl: List is empty"
+      else return (ListVal (List.tl l))
+  | IsEmpty(e) -> eval_expr e >>=
+    list_of_listVal >>= fun l ->
+      return (BoolVal (List.length l = 0))
+  | EmptyList(_t) -> return (ListVal [])
   | Debug(_e) ->
     string_of_env >>= fun str ->
     print_endline str; 
