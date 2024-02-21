@@ -82,6 +82,13 @@ let rec eval_expr : expr -> exp_val ea_result =
     list_of_listVal >>= fun l ->
       return (BoolVal (List.length l = 0))
   | EmptyList(_t) -> return (ListVal [])
+  | Unpair(id1, id2, e1, e2) ->
+    eval_expr e1 >>= 
+    pair_of_pairVal >>= fun (l, r) ->
+    extend_env id1 l >>+
+    extend_env id2 r >>+
+    eval_expr e2   
+
   | Debug(_e) ->
     string_of_env >>= fun str ->
     print_endline str; 
