@@ -93,14 +93,14 @@ let rec eval_expr : expr -> exp_val ea_result =
     return (TupleVal l)
   | Untuple(ids, e1, e2) -> 
     eval_expr e1 >>=
-    list_of_listVal >>= fun l ->
+    list_of_tupleVal >>= fun l ->
     if List.length ids = List.length l
     then extend_env
       (List.hd ids) (List.hd l) >>+
       extend_env
       (List.hd (List.tl ids)) (List.hd (List.tl l)) >>+
       eval_expr e2
-    else error "Untuple: Length of ids and tuple do not match"
+    else error "extend_env_list: Arguments do not match parameters!"
   | Debug(_e) ->
     string_of_env >>= fun str ->
     print_endline str; 
