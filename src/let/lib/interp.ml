@@ -1,3 +1,8 @@
+(*
+Name: Miguel Angel Merlin Arriola
+Pledge: I pledge my honor that I have abided by the Stevens Honor System.
+ *)
+
 open Parser_plaf.Ast
 open Parser_plaf.Parser
 open Ds
@@ -34,7 +39,7 @@ let rec eval_expr : expr -> exp_val ea_result =
     eval_expr e2 >>=
     int_of_numVal >>= fun n2 ->
     if n2==0
-    then error "Division by zero"
+      then error "Division by zero"
     else return (NumVal (n1/n2))
   | Let(id,def,body) ->
     eval_expr def >>= 
@@ -44,7 +49,7 @@ let rec eval_expr : expr -> exp_val ea_result =
     eval_expr e1 >>=
     bool_of_boolVal >>= fun b ->
     if b 
-    then eval_expr e2
+      then eval_expr e2
     else eval_expr e3
   | IsZero(e) ->
     eval_expr e >>=
@@ -70,18 +75,19 @@ let rec eval_expr : expr -> exp_val ea_result =
     return (ListVal (ev1::ev2))
   | Hd(e) -> eval_expr e >>=
     list_of_listVal >>= fun l ->
-      if List.length l = 0
+    if List.length l = 0
         then error "hd: List is empty"
-      else return (List.hd l)
+    else return (List.hd l)
   | Tl(e) -> eval_expr e >>=
     list_of_listVal >>= fun l ->
-      if List.length l = 0
-        then error "tl: List is empty"
-      else return (ListVal (List.tl l))
+    if List.length l = 0
+      then error "tl: List is empty"
+    else return (ListVal (List.tl l))
   | IsEmpty(e) -> eval_expr e >>=
     list_of_listVal >>= fun l ->
-      return (BoolVal (List.length l = 0))
-  | EmptyList(_) -> return (ListVal [])
+    return (BoolVal (List.length l = 0))
+  | EmptyList(_) -> 
+    return (ListVal [])
   | Unpair(id1, id2, e1, e2) ->
     eval_expr e1 >>= 
     pair_of_pairVal >>= fun (l, r) ->
@@ -95,10 +101,8 @@ let rec eval_expr : expr -> exp_val ea_result =
     eval_expr e1 >>=
     list_of_tupleVal >>= fun l ->
     if List.length ids = List.length l
-    then extend_env
-      (List.hd ids) (List.hd l) >>+
-      extend_env
-      (List.hd (List.tl ids)) (List.hd (List.tl l)) >>+
+      then extend_env (List.hd ids) (List.hd l) >>+
+      extend_env (List.hd (List.tl ids)) (List.hd (List.tl l)) >>+
       eval_expr e2
     else error "extend_env_list: Arguments do not match parameters!"
   | Debug(_e) ->
