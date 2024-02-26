@@ -118,7 +118,7 @@ let rec eval_expr : expr -> exp_val ea_result =
       let ids = List.map fst record in
     if List.mem id ids
       then return (List.assoc id record)
-    else error "Proj: Field not found"
+    else error "Proj: field does not exist"
   | Debug(_e) ->
     string_of_env >>= fun str ->
     print_endline str; 
