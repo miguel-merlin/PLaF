@@ -10,6 +10,8 @@ type exp_val =
   | TupleVal of exp_val list
   | UntupleVal of string list * exp_val*exp_val
   | ListVal of exp_val list
+  | RecordVal of (string*exp_val) list
+  | Proj of exp_val*string
 type env =
   | EmptyEnv
   | ExtendEnv of string*exp_val*env
@@ -112,6 +114,10 @@ let pair_of_pairVal : exp_val -> (exp_val*exp_val) ea_result =  function
 let list_of_listVal : exp_val -> (exp_val list)  ea_result =  function
   |  ListVal l -> return l
   | _ -> error "Expected a list!"
+
+let record_of_recordVal : exp_val -> ((string*exp_val) list)  ea_result =  function
+  |  RecordVal l -> return l
+  | _ -> error "Expected a record!"
            
 let rec string_of_expval = function
   | NumVal n -> "NumVal " ^ string_of_int n
@@ -121,6 +127,8 @@ let rec string_of_expval = function
   | TupleVal evs -> "TupleVal("^String.concat "," (List.map string_of_expval evs)^")"
   | UntupleVal (ids,ev1,ev2) -> "UntupleVal("^String.concat "," ids^","^string_of_expval ev1^","^string_of_expval ev2^")"
   | ListVal evs -> "ListVal("^String.concat "," (List.map string_of_expval evs)^")"
+  | RecordVal evs -> "RecordVal("^String.concat "," (List.map (fun (id,ev) -> id^"="^string_of_expval ev) evs)^")"
+  | Proj (ev,id) -> "Proj("^string_of_expval ev^","^id^")"
 
 let rec string_of_env' ac = function
   | EmptyEnv ->  "["^String.concat ",\n" ac^"]"

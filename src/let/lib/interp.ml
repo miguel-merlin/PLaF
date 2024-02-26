@@ -105,6 +105,20 @@ let rec eval_expr : expr -> exp_val ea_result =
       extend_env (List.hd (List.tl ids)) (List.hd (List.tl l)) >>+
       eval_expr e2
     else error "extend_env_list: Arguments do not match parameters!"
+  | Record(fs) -> 
+    eval_exprs (List.map snd (List.map snd fs)) >>= fun l ->
+      let rec has_duplicates = function
+        | [] -> false
+        | h::t -> if List.mem h t then true else has_duplicates t
+      in if has_duplicates (List.map fst fs)
+        then error "Record: duplicate fields"
+      else return (RecordVal (List.combine (List.map fst fs) l))
+  | Proj(e, id) -> eval_expr e >>=
+    record_of_recordVal >>= fun record ->
+      let ids = List.map fst record in
+    if List.mem id ids
+      then return (List.assoc id record)
+    else error "Proj: Field not found"
   | Debug(_e) ->
     string_of_env >>= fun str ->
     print_endline str; 
