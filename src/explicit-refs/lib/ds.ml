@@ -140,8 +140,7 @@ let rec string_of_expval = function
                                                    evs)  ^ ")" 
   | UnitVal -> "UnitVal " 
   | RefVal i -> "RefVal ("^string_of_int i^")"
-  | RecordVal(fs) -> "RecordVal("^ String.concat "," (List.map (fun (n,ev) ->
-      n^"="^string_of_expval ev) fs) ^")"
+  | RecordVal(fs) -> "RecordVal("^ String.concat "," (List.map (fun (n,ev) -> n^"="^string_of_expval ev) fs) ^")"
   | Proj(ev,n) -> "Proj("^string_of_expval ev^","^n^")"
   | SetField(ev,n,ev') -> "SetField("^string_of_expval ev^","^n^","^string_of_expval ev'^")"
   | IsNumber ev -> "IsNumber("^string_of_expval ev^")"
