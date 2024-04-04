@@ -13,6 +13,9 @@ type exp_val =
   | RecordVal of (string*exp_val) list
   | UnitVal
   | RefVal of int
+  | Proj of exp_val*string
+  | SetField of exp_val*string*exp_val
+  | IsNumber of exp_val
 and
   env =
   | EmptyEnv
@@ -139,6 +142,9 @@ let rec string_of_expval = function
   | RefVal i -> "RefVal ("^string_of_int i^")"
   | RecordVal(fs) -> "RecordVal("^ String.concat "," (List.map (fun (n,ev) ->
       n^"="^string_of_expval ev) fs) ^")"
+  | Proj(ev,n) -> "Proj("^string_of_expval ev^","^n^")"
+  | SetField(ev,n,ev') -> "SetField("^string_of_expval ev^","^n^","^string_of_expval ev'^")"
+  | IsNumber ev -> "IsNumber("^string_of_expval ev^")"
 and
    string_of_env' ac = function
   | EmptyEnv ->  "["^String.concat ",\n" ac^"]"
