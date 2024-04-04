@@ -1,7 +1,7 @@
 open Ds
 open Parser_plaf.Ast
 open Parser_plaf.Parser
-    
+
 let g_store = Store.empty_store 20 (NumVal 0)
 
 let rec eval_expr : expr -> exp_val ea_result = fun e ->
@@ -92,20 +92,48 @@ let rec eval_expr : expr -> exp_val ea_result = fun e ->
     sequence (List.map eval_expr es) >>= fun l ->
     return (List.hd (List.rev l))
   | Unit -> return UnitVal
+  | IsNumber(e) -> eval_expr e >>= fun ev -> 
+    return (BoolVal (
+      match ev with
+      | NumVal _ -> true
+      | _ -> false
+      ))
+  | IsEqual(e1, e2) ->
+    eval_expr e1 >>= fun ev1 ->
+    eval_expr e2 >>= fun ev2 ->
+    return (BoolVal (ev1 = ev2))
+  | IsGT(e1, e2) ->
+    eval_expr e1 >>= 
+    int_of_numVal >>= fun n1 ->
+    eval_expr e2 >>= 
+    int_of_numVal >>= fun n2 ->
+    return (BoolVal (n1 > n2))
+  | IsLT(e1, e2) ->
+    eval_expr e1 >>= 
+    int_of_numVal >>= fun n1 ->
+    eval_expr e2 >>= 
+    int_of_numVal >>= fun n2 ->
+    return (BoolVal (n1 < n2))
+  | Record(fs) -> failwith "implement"
+  | Proj(e, id) -> failwith "implement"
+  | SetField(e1, id, e2) -> failwith "implement"
   | Debug(_e) ->
     string_of_env >>= fun str_env ->
     let str_store = Store.string_of_store string_of_expval g_store 
     in (print_endline (str_env^"\n"^str_store);
     error "Reached breakpoint")
   | _ -> failwith ("Not implemented: "^string_of_expr e)
+and
+process_field(_id, (is_mutable,e)) =
+    eval_expr e >>= fun ev ->
+    if is_mutable
+      then return (true, ev)
+      else return (false, ev)
 
 let eval_prog (AProg(_,e)) =
-  eval_expr e         
+  eval_expr e
 
 (** [interp s] parses [s] and then evaluates it *)
 let interp (s:string) : exp_val result =
   let c = s |> parse |> eval_prog
   in run c
-
-
-

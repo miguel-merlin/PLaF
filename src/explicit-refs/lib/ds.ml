@@ -158,5 +158,3 @@ let string_of_env : string ea_result =
   | _ -> Ok (">>Environment:\n"^ string_of_env' [] env)
 
 
-
-
