@@ -108,11 +108,11 @@ let rec eval_expr : expr -> exp_val ea_result = fun e ->
     return (List.hd (List.rev l))
   | Unit -> return UnitVal
   | IsNumber(e) -> eval_expr e >>= fun ev -> 
-    return (BoolVal (
+    begin
       match ev with
-      | NumVal _ -> true
-      | _ -> false
-      ))
+      | NumVal _ -> return (BoolVal true)
+      | _ -> return (BoolVal false)
+    end
   | IsEqual(e1, e2) ->
     eval_expr e1 >>= int_of_numVal >>= fun ev1 ->
     eval_expr e2 >>= int_of_numVal >>= fun ev2 ->
