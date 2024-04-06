@@ -10,8 +10,12 @@ open Parser_plaf.Parser
 let rec addIds fs evs = 
   match fs, evs with
   | [], [] -> []
-  | (id,_)::t1, h2::t2 -> (id,h2)::(addIds t1 t2)
-  | _ -> failwith "The length of the fields and the values must be the same"
+  | (id,_)::exprs, expr_val::expr_vals -> (id,expr_val)::(addIds exprs expr_vals)
+  | _ -> failwith "The length of the fields and the values must be the equal"
+
+let rec get_ids = function
+| [] -> []
+| (id', _)::t -> id'::(get_ids t)
 
 let g_store = Store.empty_store 20 (NumVal 0)
 
@@ -110,36 +114,35 @@ let rec eval_expr : expr -> exp_val ea_result = fun e ->
       | _ -> false
       ))
   | IsEqual(e1, e2) ->
-    eval_expr e1 >>= fun ev1 ->
-    eval_expr e2 >>= fun ev2 ->
+    eval_expr e1 >>= int_of_numVal >>= fun ev1 ->
+    eval_expr e2 >>= int_of_numVal >>= fun ev2 ->
     return (BoolVal (ev1 = ev2))
   | IsGT(e1, e2) ->
-    eval_expr e1 >>= 
-    int_of_numVal >>= fun n1 ->
-    eval_expr e2 >>= 
-    int_of_numVal >>= fun n2 ->
+    eval_expr e1 >>= int_of_numVal >>= fun n1 ->
+    eval_expr e2 >>= int_of_numVal >>= fun n2 ->
     return (BoolVal (n1 > n2))
   | IsLT(e1, e2) ->
-    eval_expr e1 >>= 
-    int_of_numVal >>= fun n1 ->
-    eval_expr e2 >>= 
-    int_of_numVal >>= fun n2 ->
+    eval_expr e1 >>= int_of_numVal >>= fun n1 ->
+    eval_expr e2 >>= int_of_numVal >>= fun n2 ->
     return (BoolVal (n1 < n2))
   | Record(fs) ->
     sequence (List.map process_field fs) >>= fun evs ->
     return (RecordVal (addIds fs evs))
-  | Proj(e, id) -> eval_expr e >>= fields_of_recordVal >>= fun record ->
-    let ids = List.map fst record in
-      if List.mem id ids
-        then return (List.assoc id record)
-      else error "Field not found"
+  | Proj(e, id) -> 
+    eval_expr e >>= fields_of_recordVal >>= fun records ->
+    if List.mem id (get_ids records)
+      then return (List.assoc id records)
+    else error "id not in records"
   | SetField(e1, id, e2) -> 
-    eval_expr e1 >>= fields_of_recordVal >>= fun record ->
-    let ids = List.map fst record in
-      if List.mem id ids
-        then eval_expr e2 >>= fun ev -> 
-          return (RecordVal ((id,ev)::(List.remove_assoc id record)))
-      else error "Field not found"
+    eval_expr e1 >>= fields_of_recordVal >>= fun records ->
+    if List.mem id (get_ids records)
+      then eval_expr e2 >>= fun ev -> 
+      begin 
+        match List.assoc id records with
+        | PairVal(BoolVal true, _) -> return (RecordVal ((id, ev)::(List.remove_assoc id records)))
+        | _ -> error "Field is not mutable"
+      end
+    else error "id not in records"
   | Debug(_e) ->
     string_of_env >>= fun str_env ->
     let str_store = Store.string_of_store string_of_expval g_store 
