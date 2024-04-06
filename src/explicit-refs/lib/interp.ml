@@ -160,3 +160,10 @@ let eval_prog (AProg(_,e)) =
 let interp (s:string) : exp_val result =
   let c = s |> parse |> eval_prog
   in run c
+
+(* Interpret an expression read from a file with optional extension .exr *)
+let interpf (s:string) : exp_val result =
+  let s = String.trim s (* remove leading and trailing spaces *)
+  in let file_name = (* allow rec to be optional *)
+  match String.index_opt s '.' with None -> s^".exr" | _ -> s
+  in interp @@ read_file file_name
