@@ -1,6 +1,17 @@
+(*
+ Name: Miguel Angel Merlin Arriola
+ Pledge: "I pledge my honor that I have abided by the Stevens Honor System."   
+*)
+
 open Ds
 open Parser_plaf.Ast
 open Parser_plaf.Parser
+
+let rec addIds fs evs = 
+  match fs, evs with
+  | [], [] -> []
+  | (id,_)::t1, h2::t2 -> (id,h2)::(addIds t1 t2)
+  | _ -> failwith "The length of the fields and the values must be the same"
 
 let g_store = Store.empty_store 20 (NumVal 0)
 
@@ -114,9 +125,21 @@ let rec eval_expr : expr -> exp_val ea_result = fun e ->
     eval_expr e2 >>= 
     int_of_numVal >>= fun n2 ->
     return (BoolVal (n1 < n2))
-  | Record(fs) -> failwith "implement"
-  | Proj(e, id) -> failwith "implement"
-  | SetField(e1, id, e2) -> failwith "implement"
+  | Record(fs) ->
+    sequence (List.map process_field fs) >>= fun evs ->
+    return (RecordVal (addIds fs evs))
+  | Proj(e, id) -> eval_expr e >>= fields_of_recordVal >>= fun record ->
+    let ids = List.map fst record in
+      if List.mem id ids
+        then return (List.assoc id record)
+      else error "Field not found"
+  | SetField(e1, id, e2) -> 
+    eval_expr e1 >>= fields_of_recordVal >>= fun record ->
+    let ids = List.map fst record in
+      if List.mem id ids
+        then eval_expr e2 >>= fun ev -> 
+          return (RecordVal ((id,ev)::(List.remove_assoc id record)))
+      else error "Field not found"
   | Debug(_e) ->
     string_of_env >>= fun str_env ->
     let str_store = Store.string_of_store string_of_expval g_store 
@@ -127,8 +150,8 @@ and
 process_field(_id, (is_mutable,e)) =
     eval_expr e >>= fun ev ->
     if is_mutable
-      then return (true, ev)
-      else return (false, ev)
+      then return ev
+      else return ev
 
 let eval_prog (AProg(_,e)) =
   eval_expr e
