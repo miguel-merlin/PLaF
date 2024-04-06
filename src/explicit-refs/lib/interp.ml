@@ -143,7 +143,8 @@ let rec eval_expr : expr -> exp_val ea_result = fun e ->
         | PairVal(BoolVal true, RefVal x) -> 
           Store.set_ref g_store x ev >>= fun _ ->
           return ev
-        | _ -> error "Field is not mutable"
+        | PairVal(BoolVal false, _) -> error "Field is not mutable"
+        | _ -> error "Cannot set field"
       end
     else error "id not in records"
   | Debug(_e) ->
