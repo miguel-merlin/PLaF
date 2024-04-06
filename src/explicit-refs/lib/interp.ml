@@ -137,9 +137,12 @@ let rec eval_expr : expr -> exp_val ea_result = fun e ->
     eval_expr e1 >>= fields_of_recordVal >>= fun records ->
     if List.mem id (get_ids records)
       then eval_expr e2 >>= fun ev -> 
-      begin 
-        match List.assoc id records with
-        | PairVal(BoolVal true, _) -> return (RecordVal ((id, ev)::(List.remove_assoc id records)))
+      begin
+        let current_field = List.assoc id records in
+        match current_field with
+        | PairVal(BoolVal true, RefVal x) -> 
+          Store.set_ref g_store x ev >>= fun _ ->
+          return ev
         | _ -> error "Field is not mutable"
       end
     else error "id not in records"
