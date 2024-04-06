@@ -11,7 +11,7 @@ let rec addIds fs evs =
   match fs, evs with
   | [], [] -> []
   | (id,_)::exprs, expr_val::expr_vals -> (id,expr_val)::(addIds exprs expr_vals)
-  | _ -> failwith "The length of the fields and the values must be the equal"
+  | _ -> failwith "Invalid record"
 
 let rec get_ids = function
 | [] -> []
