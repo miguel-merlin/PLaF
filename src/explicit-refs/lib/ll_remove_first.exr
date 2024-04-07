@@ -11,13 +11,10 @@ in let add_front = proc (x) { proc (l) {
 in let remove_first = proc (l) {
   if (number?(l.head))
     then 
-      if (l.head = 0)
-        then l
-      else
-          begin
+        begin
           l.head <= l.head.next;
           l.length <= l.length -1
-          end
+        end
   else l
 }
 in begin
