@@ -1,10 +1,6 @@
 (* This file defines expressed values and environments *)
 open Parser_plaf.Ast
 
-(* TODO: 
-   1. IMPLEMENT addIds
-   2. POOP YOURSELF *)
-
 (* expressed values and environments are defined mutually recursively *)
 
 type exp_val =
@@ -13,7 +9,7 @@ type exp_val =
   | ProcVal of string*expr*env
   | PairVal of exp_val*exp_val
   | TupleVal of exp_val list
-  | RecordVal of (string*(bool*exp_val)) list 
+  | RecordVal of (string*(bool*exp_val)) list
   | UnitVal
   | RefVal of int
 and
@@ -148,8 +144,6 @@ let rec string_of_expval = function
                                                    evs)  ^ ")" 
   | UnitVal -> "UnitVal " 
   | RefVal i -> "RefVal ("^string_of_int i^")"
-  (* | RecordVal(fs) -> "RecordVal("^ String.concat "," (List.map (fun (n,ev) ->
-      n^"="^string_of_expval ev) fs) ^")" *)
   | RecordVal(fs) -> "RecordVal(" ^ String.concat ", " (List.map (fun (n, (is_mutable, ev)) ->
     let mutability = if is_mutable then "mutable" else "immutable" in
     n ^ " (" ^ mutability ^ ")=" ^ string_of_expval ev) fs) ^ ")"
