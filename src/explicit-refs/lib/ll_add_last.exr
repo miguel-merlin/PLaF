@@ -11,7 +11,15 @@ in letrec add_last_helper (nd) = proc (x) {
       end
   else ((add_last_helper nd) x)
 }
-in let add_last = proc (ll) { (add_last_helper ll.head) }
+in let add_last = proc (ll) { proc (x) {
+  if number?(ll.head)
+   then
+      begin
+	    ll.head <={ data <=x; next <= ll.head };
+		  ll.length <= ll.length+1
+      end
+  else (add_last_helper ll.head) 
+} }
 in begin
      ((add_last l1) 2);
      ((add_last l1) 3);
