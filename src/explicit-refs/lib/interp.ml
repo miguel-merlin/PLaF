@@ -107,43 +107,45 @@ let rec eval_expr : expr -> exp_val ea_result = fun e ->
     sequence (List.map eval_expr es) >>= fun l ->
     return (List.hd (List.rev l))
   | Unit -> return UnitVal
+  | IsNumber (e) ->
+    eval_expr e >>= fun ev1 ->
+    (
+    match ev1 with 
+    | NumVal _ -> return (BoolVal(true))
+    | _ -> return (BoolVal(false))
+    )
   | IsEqual (e1,e2) ->
-    eval_expr e1 >>= 
-    int_of_numVal >>= fun v1 ->
-    eval_expr e2 >>=
-    int_of_numVal >>= fun v2 ->
+    eval_expr e1 >>= int_of_numVal >>= fun v1 ->
+    eval_expr e2 >>= int_of_numVal >>= fun v2 ->
     return (BoolVal (v1 = v2))
   | IsGT ( e1 , e2 ) ->
-    eval_expr e1 >>= 
-    int_of_numVal >>= fun v1 ->
-    eval_expr e2 >>=
-    int_of_numVal >>= fun v2 ->
-    return (BoolVal (v1 > v2))
+    eval_expr e1 >>=  int_of_numVal >>= fun ev1 ->
+    eval_expr e2 >>= int_of_numVal >>= fun ev2 ->
+    return (BoolVal (ev1 > ev2))
   | IsLT ( e1 , e2 ) ->
-    eval_expr e1 >>= 
-    int_of_numVal >>= fun v1 ->
-    eval_expr e2 >>=
-    int_of_numVal >>= fun v2 ->
-    return (BoolVal (v1 < v2))
-  | IsNumber (e) ->
-    eval_expr e >>= fun num ->
-      (match num with 
-      | NumVal _ -> return @@ BoolVal(true)
-      | _ -> return @@ BoolVal(false))
+    eval_expr e1 >>= int_of_numVal >>= fun ev1 ->
+    eval_expr e2 >>= int_of_numVal >>= fun ev2 ->
+    return (BoolVal (ev1 < ev2))
   | Record (fs) ->
     sequence (List.map process_field fs) >>= fun evs ->
     return (RecordVal (addIds fs evs))
   | Proj (e, id) -> 
-    eval_expr e >>=
-    fields_of_recordVal >>= fun record ->
-    (match (List.assoc id record) with 
-    | field -> proj_help(id, field)
-    | exception Not_found -> error "Proj: Field not found" )
+    eval_expr e >>= fields_of_recordVal >>= fun records ->
+    (
+    match (List.assoc id records) with 
+    | field -> proj_helper(id, field)
+    | exception Not_found -> error "Proj: Field not found" 
+    )
   | SetField (e1, id, e2) ->
-    eval_expr e1 >>= fields_of_recordVal >>= fun record1 ->
-   ( match (List.assoc id record1) with 
-    | field -> set_help(id, field) e2
-    | exception Not_found -> error "SetField: Field not found" )
+    eval_expr e1 >>= fields_of_recordVal >>= fun records ->
+   (
+    let ids = get_ids records in
+    if not (List.mem id ids) 
+      then error "SetField: Field not found"
+    else
+      match (List.assoc id records) with 
+      | record -> set_helper(id, record) e2
+   )
   | Debug(_e) ->
     string_of_env >>= fun str_env ->
     let str_store = Store.string_of_store string_of_expval g_store 
@@ -157,18 +159,22 @@ let rec eval_expr : expr -> exp_val ea_result = fun e ->
     then return ( RefVal ( Store.new_ref g_store ev )) 
   else return ev
   and
-  proj_help(_id,(is_mutable,e)) =
+  proj_helper(_id, (is_mutable, e)) =
   if is_mutable
-  then int_of_refVal e >>= (Store.deref g_store)
+    then 
+      int_of_refVal e >>= 
+      Store.deref g_store
   else return e
   and 
-  set_help(_id,(is_mutable,e)) e2 = 
+  set_helper(_id, (is_mutable, e1)) e2 = 
   if is_mutable
-  then int_of_refVal e >>= fun ev1 ->
+  then 
+    int_of_refVal e1 >>= fun ev1 ->
     eval_expr e2 >>= fun ev2 ->
-    (Store.set_ref g_store ev1 ev2) >>= fun _ -> 
+    Store.set_ref g_store ev1 ev2 >>= fun _ ->
     return UnitVal 
-  else error "Failed to modify record"
+  else 
+    error "Failed to modify record"
 
 
 let eval_prog (AProg(_,e)) =
