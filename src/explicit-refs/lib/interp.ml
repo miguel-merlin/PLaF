@@ -11,7 +11,7 @@ let rec addIds fs evs =
   match (fs, evs) with
   | [], [] -> []
   | (id,(is_mutable,_))::t1 , ev::t2 -> (id,(is_mutable, ev))::(addIds t1 t2)
-  | _ -> failwith "addIds : lists have different sizes"
+  | _ -> failwith "addIds: the size of the fields and the values do not match"
 
 let rec get_ids = function
 | [] -> []
@@ -118,23 +118,26 @@ let rec eval_expr : expr -> exp_val ea_result = fun e ->
     eval_expr e1 >>= int_of_numVal >>= fun v1 ->
     eval_expr e2 >>= int_of_numVal >>= fun v2 ->
     return (BoolVal (v1 = v2))
-  | IsGT ( e1 , e2 ) ->
+  | IsGT (e1, e2) ->
     eval_expr e1 >>=  int_of_numVal >>= fun ev1 ->
     eval_expr e2 >>= int_of_numVal >>= fun ev2 ->
     return (BoolVal (ev1 > ev2))
-  | IsLT ( e1 , e2 ) ->
+  | IsLT (e1,e2) ->
     eval_expr e1 >>= int_of_numVal >>= fun ev1 ->
     eval_expr e2 >>= int_of_numVal >>= fun ev2 ->
     return (BoolVal (ev1 < ev2))
   | Record (fs) ->
     sequence (List.map process_field fs) >>= fun evs ->
     return (RecordVal (addIds fs evs))
-  | Proj (e, id) -> 
+  | Proj (e,id) -> 
     eval_expr e >>= fields_of_recordVal >>= fun records ->
+    let ids = get_ids records in
+    if not (List.mem id ids) 
+      then error "Proj: Field not found"
+    else
     (
     match (List.assoc id records) with 
     | field -> proj_helper(id, field)
-    | exception Not_found -> error "Proj: Field not found" 
     )
   | SetField (e1, id, e2) ->
     eval_expr e1 >>= fields_of_recordVal >>= fun records ->
@@ -162,8 +165,7 @@ let rec eval_expr : expr -> exp_val ea_result = fun e ->
   proj_helper(_id, (is_mutable, e)) =
   if is_mutable
     then 
-      int_of_refVal e >>= 
-      Store.deref g_store
+      int_of_refVal e >>= Store.deref g_store
   else return e
   and 
   set_helper(_id, (is_mutable, e1)) e2 = 
