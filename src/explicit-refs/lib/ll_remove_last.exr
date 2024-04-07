@@ -21,7 +21,14 @@ in letrec remove_last_helper (nd) =
 in let remove_last = proc (ll) {
   if number?(ll.head)
    then ll
-  else 
+  else
+   if (number?(ll.head.next))
+    then
+      begin
+       ll.head <= 0;
+       ll.length <= ll.length - 1
+      end
+  else
    begin
     (remove_last_helper ll.head);
     ll.length <= ll.length - 1
