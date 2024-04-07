@@ -10,12 +10,12 @@ in let add_front = proc (x) { proc (l) {
 	      } }
 in let remove_first = proc (l) {
   if (number?(l.head))
-    then 
-        begin
-          l.head <= l.head.next;
-          l.length <= l.length -1
-        end
-  else l
+    then l
+  else         
+    begin
+      l.head <= l.head.next;
+      l.length <= l.length - 1
+    end
 }
 in begin
      ((add_front 2) l1);
