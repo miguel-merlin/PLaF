@@ -2,25 +2,16 @@
 (* add last exercise 1 *)
 
 let l1 = { head <= 0; length <= 0} (* 0 in head signals null *)
-in letrec add_last_helper(nd) = proc (key) {
-                 if number?(nd.next)
-		 then nd.next <= { data <=key; next <= 0 }
-	         else ((add_last_helper nd.next) key)
-	      } 
-in let add_last = proc (x) { proc (l) {
-    if (number?(l.head))
-     then
+in letrec add_last_helper (nd) = proc (x) {
+  if number?(nd.next)
+   then 
       begin
-       l.head <= { data <= x; next <= 0};
-       l.length <= l.length + 1;
+	     l.head <={ data <=x; next <= 0 };
+		   l.length <= l.length+1
       end
-    else
-      begin
-       (add_last_helper l.head) x;
-       l.length <= l.length + 1;
-      end
-  }
+  else ((add_last_helper nd) x)
 }
+in let add_last = proc (ll) { (add_last_helper ll.head) }
 in begin
      ((add_last l1) 2);
      ((add_last l1) 3);
