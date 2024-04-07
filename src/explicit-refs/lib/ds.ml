@@ -51,10 +51,9 @@ let (>>+) (c:env ea_result) (d:'a ea_result): 'a ea_result =
 let run (c:'a ea_result) : 'a result =
   c EmptyEnv
 
-(* REMOVE YES OR NO????? *)
-let sequence (cs: ('a ea_result) list) : ('a list) ea_result  =
+(* let sequence (cs: ('a ea_result) list) : ('a list) ea_result  =
   let mcons p q = p >>= fun x -> q >>= fun y -> return (x::y)
-  in List.fold_right mcons cs (return []) 
+  in List.fold_right mcons cs (return [])  *)
 
 let rec sequence : ('a ea_result ) list -> ( 'a list ) ea_result =
   fun cs ->
