@@ -7,24 +7,13 @@ in let add_front = proc (x) { proc (l) {
 		 l.length <= l.length+1
               end
 	      } }
-in letrec remove_last_helper(prev, curr) = proc () {
-    if number?(curr.next) then begin  (* If curr is the last node *)
-        prev.next <= 0;  (* Disconnect the last node *)
-        l1.length <= l1.length - 1;  (* Decrement the length *)
-    end else begin
-        ((remove_last_helper curr, curr.next))()  (* Recursively move to the next node *)
-    end
-}
-in let remove_last = proc (l) {
-    if l.head != 0 then begin  (* Check if the list is not empty *)
-        if l.head.next == 0 then begin  (* If there's only one node *)
-            l.head <= 0;  (* Set head to null *)
-            l.length <= 0;  (* Set length to 0 *)
-        end else begin
-            ((remove_last_helper l.head, l.head.next))()  (* Start recursion with head and head.next *)
-        end
-    end
-}
+in letrec remove_last_helper (nd) =
+   if number?(nd)
+   then 0
+   else (begin
+	  (remove_last_helper nd.next)
+	end)
+in let remove_last = proc (ll) { (remove_last_helper ll.head) }
 in begin
      ((add_front 2) l1);
      ((add_front 3) l1);
