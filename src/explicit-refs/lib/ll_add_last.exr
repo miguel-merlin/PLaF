@@ -6,10 +6,9 @@ in letrec add_last_helper (nd) = proc (x) {
   if number?(nd.next)
    then 
       begin
-	     l.head <={ data <=x; next <= 0 };
-		   l.length <= l.length+1
+	     nd.next <= { data <= x; next <= 0 }
       end
-  else ((add_last_helper nd) x)
+  else ((add_last_helper nd.next) x)
 }
 in let add_last = proc (ll) { proc (x) {
   if number?(ll.head)
@@ -18,7 +17,12 @@ in let add_last = proc (ll) { proc (x) {
 	    ll.head <={ data <=x; next <= ll.head };
 		  ll.length <= ll.length+1
       end
-  else (add_last_helper ll.head) 
+  else (
+    begin
+     ((add_last_helper ll.head) x);
+     ll.length <= ll.length + 1
+    end
+  )
 } }
 in begin
      ((add_last l1) 2);
