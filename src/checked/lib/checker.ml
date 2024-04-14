@@ -52,6 +52,85 @@ let rec chk_expr : expr -> texpr tea_result = function
      else error
          "LetRec: Type of recursive function does not match
 declaration")
+  | NewRef(e) -> 
+    chk_expr e >>= fun t ->
+    return (RefType(t))
+  | DeRef(e) -> 
+    chk_expr e >>= fun t ->
+    (match t with
+    | RefType(t1) -> return t1
+    | _ -> error "DeRef: argument must be a reference")
+  | SetRef(e1,e2) -> 
+    chk_expr e1 >>= fun t1 ->
+    chk_expr e2 >>= fun t2 ->
+    (match t1 with
+    | RefType(t) -> 
+        if t=t2 
+          then 
+            return UnitType 
+        else 
+          error "setref: type mismatch"
+    | _ -> error "setref: Expected a reference type")
+  | BeginEnd([]) -> return UnitType
+  | BeginEnd(es) -> List.fold_left (fun c e -> c >>= fun _ -> chk_expr e) (return UnitType) es
+  | EmptyList(t) -> 
+    (match t with
+    | Some t1 -> return (ListType(t1))
+    | None -> error "EmptyList: type declaration missing"
+    )
+  | Cons(e1, e2) ->
+    chk_expr e1 >>= fun t1 ->
+    chk_expr e2 >>= fun t2 ->
+    (match t2 with
+    | ListType(t) -> 
+        if t=t1 
+          then 
+            return t2 
+        else 
+          error "cons: type of head and tail do not match"
+    | _ -> error "cons: second argument must be a list")
+  | IsEmpty(e) -> 
+    chk_expr e >>= fun t ->
+    (match t with
+    | ListType(_) -> return BoolType
+    | _ -> error "isEmpty: argument must be a list")
+  | Hd(e) -> 
+    chk_expr e >>= fun t ->
+    (match t with
+    | ListType(t1) -> return t1
+    | _ -> error "hd: argument must be a list")
+  | Tl(e) -> 
+    chk_expr e >>= fun t ->
+    (match t with
+    | ListType(_) -> return t
+    | _ -> error "tl: argument must be a list")
+  | EmptyTree(t) -> 
+    (match t with
+    | Some t1 -> return (TreeType(t1))
+    | None -> error "EmptyTree: type declaration missing"
+    )
+  | Node(de, le, re) -> 
+    chk_expr de >>= fun t1 ->
+    chk_expr le >>= fun t2 ->
+    chk_expr re >>= fun t3 ->
+    (match t2, t3 with
+    | TreeType(t2), TreeType(t3) -> 
+        if t1=t2 && t1=t3 
+          then 
+            return (TreeType(t1)) 
+        else 
+          error "node: type mismatch"
+    | _ -> error "node: arguments must be trees")
+  | CaseT(target, emptycase, id1, id2, id3, nodecase) ->
+    chk_expr target >>= fun t ->
+    chk_expr emptycase >>= fun t1 ->
+    extend_tenv id1 t >>= fun _ ->
+    extend_tenv id2 (TreeType(t)) >>= fun _ ->
+    extend_tenv id3 (TreeType(t)) >>= fun _ ->
+    chk_expr nodecase >>= fun t2 ->
+    if t1=t2
+      then return t1
+    else error "caseT: type mismatch"
   | Debug(_e) ->
     string_of_tenv >>= fun str ->
     print_endline str;
