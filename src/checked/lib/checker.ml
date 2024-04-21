@@ -54,7 +54,7 @@ let rec chk_expr : expr -> texpr tea_result = function
 declaration")
   | NewRef(e) -> 
     chk_expr e >>= fun t ->
-    return (RefType(t))
+    return (RefType (t))
   | DeRef(e) -> 
     chk_expr e >>= fun t ->
     (match t with
@@ -62,17 +62,18 @@ declaration")
     | _ -> error "DeRef: argument must be a reference")
   | SetRef(e1,e2) -> 
     chk_expr e1 >>= fun t1 ->
-    chk_expr e2 >>= fun t2 ->
     (match t1 with
     | RefType(t) -> 
-        if t=t2 
+        chk_expr e2 >>= fun t2 ->
+        if t=t2
           then 
             return UnitType 
         else 
           error "setref: type mismatch"
     | _ -> error "setref: Expected a reference type")
   | BeginEnd([]) -> return UnitType
-  | BeginEnd(es) -> List.fold_left (fun c e -> c >>= fun _ -> chk_expr e) (return UnitType) es
+  | BeginEnd(es) -> 
+    List.fold_left (fun c e -> c >>= fun _ -> chk_expr e) (return UnitType) es (* From previous implementations of BeginEnd in explicit-refs *)
   | EmptyList(t) -> 
     (match t with
     | Some t1 -> return (ListType(t1))
@@ -82,7 +83,7 @@ declaration")
     chk_expr e1 >>= fun t1 ->
     chk_expr e2 >>= fun t2 ->
     (match t2 with
-    | ListType(t) -> 
+    | ListType (t) -> 
         if t=t1 
           then 
             return t2 
@@ -92,7 +93,7 @@ declaration")
   | IsEmpty(e) -> 
     chk_expr e >>= fun t ->
     (match t with
-    | ListType(_) -> return BoolType
+    | ListType (_) | TreeType(_) -> return BoolType 
     | _ -> error "isEmpty: argument must be a list")
   | Hd(e) -> 
     chk_expr e >>= fun t ->
@@ -107,7 +108,7 @@ declaration")
   | EmptyTree(t) -> 
     (match t with
     | Some t1 -> return (TreeType(t1))
-    | None -> error "EmptyTree: type declaration missing"
+    | None -> error "EmptyTree: Cannot create empty tree without type declaration"
     )
   | Node(de, le, re) -> 
     chk_expr de >>= fun t1 ->
@@ -123,14 +124,18 @@ declaration")
     | _ -> error "node: arguments must be trees")
   | CaseT(target, emptycase, id1, id2, id3, nodecase) ->
     chk_expr target >>= fun t ->
-    chk_expr emptycase >>= fun t1 ->
-    extend_tenv id1 t >>= fun _ ->
-    extend_tenv id2 (TreeType(t)) >>= fun _ ->
-    extend_tenv id3 (TreeType(t)) >>= fun _ ->
-    chk_expr nodecase >>= fun t2 ->
-    if t1=t2
-      then return t1
-    else error "caseT: type mismatch"
+    (match t with
+    | TreeType(t1) -> 
+        chk_expr emptycase >>= fun t2 ->
+          if (t1=t2) 
+            then
+              extend_tenv id1 t1 >>+
+              extend_tenv id2 (TreeType(t1)) >>+
+              extend_tenv id3 (TreeType(t1)) >>+
+              chk_expr nodecase
+          else 
+            chk_expr emptycase
+    | _ -> error "caseT: target must be a tree")
   | Debug(_e) ->
     string_of_tenv >>= fun str ->
     print_endline str;
