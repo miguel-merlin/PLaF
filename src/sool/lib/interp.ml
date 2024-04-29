@@ -267,6 +267,12 @@ and
     eval_expr e >>=
     list_of_listVal >>= fun l ->
     return @@ BoolVal (l=[])   
+  | IsInstanceOf(e, id) ->
+    eval_expr e >>= fun ev ->
+    obj_of_objectVal ev >>= fun (c_name, _) ->
+    if (c_name = id) 
+      then return (BoolVal true)
+    else return (BoolVal false)
   (* Debug *)
   | Debug(_e) ->
     string_of_env >>= fun str_env ->
