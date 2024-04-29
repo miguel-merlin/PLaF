@@ -270,9 +270,7 @@ and
   | IsInstanceOf(e, id) ->
     eval_expr e >>= fun ev ->
     obj_of_objectVal ev >>= fun (c_name, _) ->
-    if (c_name = id) 
-      then return (BoolVal true)
-    else return (BoolVal false)
+    is_subclass c_name id !g_class_env
   (* Debug *)
   | Debug(_e) ->
     string_of_env >>= fun str_env ->
@@ -294,7 +292,15 @@ and
   fun (AProg(cs, e)) ->
   initialize_class_env cs;   (* Step 1 *) 
   eval_expr e                (* Step 2 *)
-
+and
+  is_subclass : string -> string -> class_env -> exp_val ea_result =
+  fun c_name1 c_name2 c_env ->
+  if (c_name1 = c_name2) 
+    then return (BoolVal true)
+  else
+    match List.assoc_opt c_name1 c_env with
+    | None -> return (BoolVal false)
+    | Some (super_class,_,_) -> is_subclass super_class c_name2 c_env
 
 (** [interp s] evaluates program [s] *)
 let interp (s: string) : exp_val result = 
