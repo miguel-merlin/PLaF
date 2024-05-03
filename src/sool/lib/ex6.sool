@@ -1,0 +1,14 @@
+(* Example 6 *)
+class counterc extends object { 
+  field c
+  method initialize() { set c=7 }
+  method add(i) { set c=c+i }
+  method add(i, j) {}
+  method bump() { send self add(1) }
+  method read() { c }
+}
+
+(* main expression *)
+let o = new counterc() in
+begin
+    

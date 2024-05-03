@@ -19,6 +19,9 @@ let g_store = Store.empty_store 20 (NumVal 0)
 let g_class_env : class_env ref = ref []
 
 
+(* Helper function method overloading *)
+let name_mangle n es =
+  n^"_"^string_of_int (List.length es)
 
 (* Initialize contents of g_class_env variable  *)
 
@@ -42,7 +45,8 @@ let initialize_class_env cs =
     | [] -> []
     | Class (name,super,_impl,_fields,methods)::_  when name=c_name ->
       (List.map (fun (Method(n,_ret_type,pars,body))
-                  -> (n,(List.map fst pars,body,super,List.flatten fss)))
+                  -> let mangled_name = (name_mangle n pars) in
+                    (mangled_name,(List.map fst pars,body,super,List.flatten fss)))
          methods) @ get_methods cs super (List.tl fss) cs
     | Class (_,_,_,_,_)::cs'  | Interface(_,_)::cs'
       -> get_methods cs c_name fss cs'
@@ -52,9 +56,10 @@ let initialize_class_env cs =
       | [] -> ()
       | Class (name,super,_impl,fields,methods)::cs'  ->
         let fss = (List.map fst fields) :: get_fields cs super cs
-        in let ms = (List.map (fun (Method(n,_ret_type,pars,body))
-                                -> (n,(List.map fst pars,body,super,List.flatten fss)))
-                       methods) @ get_methods cs super (List.tl fss) cs
+        in let ms = (List.map (fun (Method(n,_ret_type,pars,body)) ->
+          let mangled_name = (name_mangle n pars) in
+          (mangled_name, (List.map fst pars,body,super,List.flatten fss)))methods) 
+                                  @ get_methods cs super (List.tl fss) cs
         in
         g_class_env := (name,(super,List.flatten fss,ms))::!g_class_env;
         initialize_class_env' cs cs'
@@ -105,7 +110,7 @@ let rec apply_method : string -> exp_val -> exp_val list ->
   (* allocate name of superclass *)
   in
   if List.length args<> List.length pars
-  then error (m_name ^": args and params have different lengths")
+  then error (m_name^": args and params have different lengths")
   else
     obj_of_objectVal self >>= fun  (_c_name,env) ->
     slice fs env >>+
@@ -225,17 +230,17 @@ and
      | Some (_super,fields,methods) -> 
        new_env fields >>= fun env ->
        let self = ObjectVal(c_name,env)
-       in (match List.assoc_opt "initialize" methods with
+       in (match List.assoc_opt (name_mangle "initialize" es) methods with
            | None -> return self
-           | Some m -> apply_method "initialize" self args m >>= fun _ ->
+           | Some m -> apply_method (name_mangle "initialize" es) self args m >>= fun _ ->
              return self))
   | Send(e,m_name,es) ->
     eval_expr e >>= fun self ->
     obj_of_objectVal self >>= fun (c_name,_) ->
     eval_exprs es >>= fun args ->
-    (match lookup_method c_name m_name !g_class_env with
-     | None -> error "Method not found"
-     | Some m -> apply_method m_name self args m)
+    (match lookup_method c_name (name_mangle m_name es) !g_class_env with
+     | None -> error "Method not found (send)"
+     | Some m -> apply_method (name_mangle m_name es) self args m)
   | Self ->
     eval_expr (Var "_self")
   | Super(m_name,es) ->
@@ -243,9 +248,9 @@ and
     eval_expr (Var "_super") >>=
     string_of_stringVal >>= fun c_name ->
     eval_expr (Var "_self") >>= fun self ->
-    (match lookup_method c_name m_name !g_class_env with
-     | None -> error "Method not found"
-     | Some m -> apply_method m_name self args m)
+    (match lookup_method c_name (name_mangle m_name es) !g_class_env with
+     | None -> error "Method not found (super)"
+     | Some m -> apply_method (name_mangle m_name es) self args m)
   (* List operations* *)
   | List(es) ->
     eval_exprs es >>= fun args ->
@@ -299,8 +304,18 @@ and
     then return (BoolVal true)
   else
     match List.assoc_opt c_name1 c_env with
-    | None -> return (BoolVal false)
+    | None -> 
+      (* Check if the c_name1 exists *)
+      if (check_class_exists c_name2 c_env)
+        then return (BoolVal false)
+      else error ("is_subclass: class "^c_name2^" not found")
     | Some (super_class,_,_) -> is_subclass super_class c_name2 c_env
+and
+check_class_exists : string -> class_env -> bool =
+  fun c_name c_env ->
+  match List.assoc_opt c_name c_env with
+  | None -> false
+  | Some _ -> true
 
 (** [interp s] evaluates program [s] *)
 let interp (s: string) : exp_val result = 
